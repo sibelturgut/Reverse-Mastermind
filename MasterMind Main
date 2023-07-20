@@ -1,0 +1,644 @@
+import java.util.*;
+public class Main {
+
+    static int directHit;
+    static int closeHit;
+    static String guessedNumber="";
+    static ArrayList<Integer> directHits = new ArrayList<>();
+    static ArrayList<Integer> closeHits = new ArrayList<>();
+    static ArrayList<Integer> correctDigit = new ArrayList<>();
+    static ArrayList<String> guesses = new ArrayList<>();
+    static ArrayList<String> numberPool = new ArrayList<>();
+    static ArrayList<String> tempPool = new ArrayList<>();
+    static ArrayList<Integer> tempDirectHits = new ArrayList<>();
+
+    public static String numberGenerator() { //picks a random number from numberPool
+        Random rand = new Random();
+        if(numberPool.size()<1){
+            System.out.println("You have been inconsistent, there is no other option left!");
+            System.exit(0);
+        }
+        String number = numberPool.get(rand.nextInt(numberPool.size()));
+        numberPool.remove(number);
+        guesses.add(number);
+        return number;
+    }
+    public static void  getFeedback(){
+
+        String line;
+        String[] lineVector;
+
+        Scanner keyboard = new Scanner(System.in);
+        line = keyboard.nextLine(); //read 1,2
+
+        //separate all values by comma
+        lineVector = line.split(",");
+
+        //parsing the values to Integer
+        directHit=Integer.parseInt(lineVector[0]);
+        closeHit =Integer.parseInt(lineVector[1]);
+
+        directHits.add(directHit);
+        closeHits.add(closeHit);
+        correctDigit.add(directHit+ closeHit);
+
+        for(int i = 0; i< correctDigit.size(); i++){
+            if(correctDigit.get(i)>6){
+                System.out.println("This is a six digit number! Please try again and give correct feedbacks!");
+                System.exit(0);
+            }
+        }
+        if(directHit==6 && closeHit ==0){ //if number has found
+            System.out.println("I Found Your Number!!! The Number is "+guessedNumber);
+            System.exit(0);
+        }
+        if(directHit==5 && closeHit ==1){ //such feedback is not possible
+            System.out.println("The feedback you have entered is not possible! Try all over again with correct feedbacks!");
+            System.exit(0);
+        }
+        guesses.add(guessedNumber);
+    }
+    public static void isConsistent1(){
+        // this method is useful only for the part where the program guesses 000000...999999
+        //sum of directHits cannot be higher than 6, since program asks different digits each time, and
+        //this is a six-digit number
+        //it also checks if closeHit equals zero
+
+        int sumOfDH =0; //sum of correct numbers
+        for(int i=0;i<directHits.size();i++){
+            sumOfDH += directHits.get(i);
+        }
+        if(sumOfDH >6){
+            System.out.println("You are being inconsistent, try all over again!");
+            System.exit(0);
+        }
+        for(int i=0;i<closeHits.size();i++){
+            if(closeHits.get(i)!=0){
+                System.out.println("You are being inconsistent! Please try again!");
+                System.exit(0);
+            }
+        }
+    }
+
+    public static void isConsistent2(){ //after first guesses, correctnumber cannot be lower than 6, all digits have found
+        for(int i = 0; i< correctDigit.size(); i++){
+            if(correctDigit.get(i)<6){
+                System.out.println("You are being inconsistent! Please try again!");
+                System.exit(0);
+            }
+        }
+    }
+    public static void isConsistent3(){ //works for only first guesses (000000...999999)
+        //user cannot give feedbacks less than total 6. it is a six-digit number
+        int sum=0;
+        for(int i=0;i<directHits.size();i++) {
+            sum += directHits.get(i);
+        }if(sum<6){
+            System.out.println("This is a six digit number! Please try again and give correct feedbacks!");
+            System.exit(0);
+        }
+    }
+    public static boolean allDigitsFound(){
+        //works when all digits in the secret number has found, prevents unnecessary guesses
+        int sumOfCN=0; //sum of correct numbers
+        for(int i = 0; i< correctDigit.size(); i++){
+            sumOfCN += correctDigit.get(i);
+        }
+        if(sumOfCN==6){
+            return true;
+        }
+        return false;
+    }
+
+    public static void generateNumberList(){ //generates all possible guesses accordingly, and adds them to numberPool
+        ArrayList <Character> digits = new ArrayList<>();
+        for (int y = 0; y < guesses.size(); y++) {
+            // Find the digit that was used in the guess
+            if (directHits.get(y) > 0) {
+                char digit = guesses.get(y).charAt(0);
+                digits.add(digit);
+            }
+        }
+        tempDirectHits.addAll(directHits);
+        for(int x=0;x<directHits.size();x++){
+            if(directHits.get(x)==0){
+                directHits.remove(x);
+                x--;
+            }
+        }
+        Set<String> numberSet = new HashSet<>();
+        for (int i = 0; i <= 9; i++) {
+            for (int j = 0; j <= 9; j++) {
+                for (int k = 0; k <= 9; k++) {
+                    for (int l = 0; l <= 9; l++) {
+                        for (int m = 0; m <= 9; m++) {
+                            for (int n = 0; n <= 9; n++) {
+                                String number = "" + i + j + k + l + m + n;
+
+                                boolean meetsCriteria = true;
+                                for(int x=0;x<digits.size();x++) {
+                                    int check = 0;
+                                    for (int a = 0; a < 6; a++) {
+                                        if (number.charAt(a) == digits.get(x)) {
+                                            check++;
+                                        }
+                                    }
+                                    if (check != directHits.get(x)) {
+                                        meetsCriteria = false;
+                                        break;
+                                    }
+                                }
+                                if(meetsCriteria){
+                                    numberPool.add(number);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        directHits.addAll(tempDirectHits);
+        tempDirectHits.clear();
+        numberPool.addAll(numberSet);
+    }
+
+    public static void removeRest(char a, int b){ //remove other not possible numbers, according to feedback
+        for(int x=0;x<numberPool.size();x++){
+            if(b==1 && numberPool.get(x).charAt(0) != a){
+                numberPool.remove(x);
+                x--;
+            }else if(b==2 && numberPool.get(x).charAt(1) != a){
+                numberPool.remove(x);
+                x--;
+            }else if(b==3 && numberPool.get(x).charAt(2) != a){
+                numberPool.remove(x);
+                x--;
+            }else if(b==4 && numberPool.get(x).charAt(3) != a){
+                numberPool.remove(x);
+                x--;
+            }else if(b==5 && numberPool.get(x).charAt(4) != a){
+                numberPool.remove(x);
+                x--;
+            }else if(b==6 && numberPool.get(x).charAt(5) != a){
+                numberPool.remove(x);
+                x--;
+            }
+        }
+    }
+    public static boolean hasNumberFound(int a){ //checks if the digit in this particular position has found
+        boolean allSame = true;
+        if(numberPool.size()>0) {
+            if (a == 2) {
+                int secondDigit = numberPool.get(0).charAt(1);
+
+                for (int u = 1; u < numberPool.size(); u++) {
+                    int currentSecondDigit = numberPool.get(u).charAt(1);
+                    if (secondDigit != currentSecondDigit) {
+                        allSame = false;
+                        break;
+                    }
+                }
+            }
+            if (a == 3) {
+                int thirdDigit = numberPool.get(0).charAt(2);
+
+                for (int u = 1; u < numberPool.size(); u++) {
+                    int currentThirdDigit = numberPool.get(u).charAt(2);
+                    if (thirdDigit != currentThirdDigit) {
+                        allSame = false;
+                        break;
+                    }
+                }
+            }
+            if (a == 4) {
+                int fourthDigit = numberPool.get(0).charAt(3);
+
+                for (int u = 1; u < numberPool.size(); u++) {
+                    int currentFourthDigit = numberPool.get(u).charAt(3);
+                    if (fourthDigit != currentFourthDigit) {
+                        allSame = false;
+                        break;
+                    }
+                }
+            }
+            if (a == 5) {
+                int fifthDigit = numberPool.get(0).charAt(4);
+
+                for (int u = 1; u < numberPool.size(); u++) {
+                    int currentFifthDigit = numberPool.get(u).charAt(4);
+                    if (fifthDigit != currentFifthDigit) {
+                        allSame = false;
+                        break;
+                    }
+                }
+            }
+            if (a == 6) {
+                int sixthDigit = numberPool.get(0).charAt(5);
+
+                for (int u = 1; u < numberPool.size(); u++) {
+                    int currentSixthDigit = numberPool.get(u).charAt(5);
+                    if (sixthDigit != currentSixthDigit) {
+                        allSame = false;
+                        break;
+                    }
+                }
+            }
+        }
+        return allSame;
+    }
+
+    public static void main(String[] args) {
+
+        for (int i = 0; i < 10; i++) { //the part that prints 000000...999999 and gets feedback
+            for (int a = 0; a < 6; a++) {
+                guessedNumber += i;
+            }
+            System.out.println("My Guess is " + guessedNumber+".Please enter feedback.");
+            getFeedback();
+            isConsistent1();
+            guessedNumber = "";
+            if (allDigitsFound()) {
+                break;
+            }
+        }
+        isConsistent3();
+        boolean condition = false;
+        generateNumberList();
+        tempPool.addAll(numberPool);
+
+        while (!condition) { // condition is true only when the difference between two different directHit is 2
+            int y = 0;
+            directHits.clear();           //clean those arraylists since we do not need previous records anymore
+            closeHits.clear();
+            correctDigit.clear();
+            guesses.clear();
+
+            guessedNumber = numberGenerator();
+            System.out.println("My Guess is "+guessedNumber);
+            getFeedback();
+            isConsistent2();
+
+            //this if part simply compares the digits starting from position 1 and 6. If they are same,
+            //skips to comparing 1 and 5. If they are not same, switches them and presents the new number
+
+            if (guessedNumber.charAt(0) != guessedNumber.charAt(5)) {
+                guessedNumber = "";
+                guessedNumber = guessedNumber + guesses.get(0).charAt(5) + guesses.get(0).charAt(1) + guesses.get(0).charAt(2) +
+                        guesses.get(0).charAt(3) + guesses.get(0).charAt(4) + guesses.get(0).charAt(0);
+                guesses.add(guessedNumber);
+                y = 5;
+            } else {
+                if (guessedNumber.charAt(0) != guessedNumber.charAt(4)) {
+                    guessedNumber = "";
+                    guessedNumber = guessedNumber + guesses.get(0).charAt(4) + guesses.get(0).charAt(1) + guesses.get(0).charAt(2) +
+                            guesses.get(0).charAt(3) + guesses.get(0).charAt(0) + guesses.get(0).charAt(5);
+                    guesses.add(guessedNumber);
+                    y = 4;
+                } else {
+                    if (guessedNumber.charAt(0) != guessedNumber.charAt(3)) {
+                        guessedNumber = "";
+                        guessedNumber = guessedNumber + guesses.get(0).charAt(3) + guesses.get(0).charAt(1) + guesses.get(0).charAt(2) +
+                                guesses.get(0).charAt(0) + guesses.get(0).charAt(4) + guesses.get(0).charAt(5);
+                        guesses.add(guessedNumber);
+                        y = 3;
+                    } else {
+                        if (guessedNumber.charAt(0) != guessedNumber.charAt(2)) {
+                            guessedNumber = "";
+                            guessedNumber = guessedNumber + guesses.get(0).charAt(2) + guesses.get(0).charAt(1) + guesses.get(0).charAt(0) +
+                                    guesses.get(0).charAt(3) + guesses.get(0).charAt(3) + guesses.get(0).charAt(5);
+                            guesses.add(guessedNumber);
+                            y = 2;
+                        } else {
+                            if (guessedNumber.charAt(0) != guessedNumber.charAt(1)) {
+                                guessedNumber = "";
+                                guessedNumber = guessedNumber + guesses.get(0).charAt(1) + guesses.get(0).charAt(0) + guesses.get(0).charAt(2) +
+                                        guesses.get(0).charAt(3) + guesses.get(0).charAt(4) + guesses.get(0).charAt(5);
+                                guesses.add(guessedNumber);
+                                y = 1;
+                            } else {
+                                System.out.println("You are being inconsistent! Try again!");
+                                System.exit(0);
+                            }
+                        }
+                    }
+
+                }
+            }
+            for (int j = 0; j < numberPool.size(); j++) { //deleting presented numbers
+                if (numberPool.get(j) == guesses.get(0) || numberPool.get(j) == guesses.get(1)) {
+                    numberPool.remove(j);
+                    j--;
+                }
+            }
+            for (int j = 0; j < tempPool.size(); j++) { //deleting presented numbers
+                if (tempPool.get(j) == guesses.get(0) || tempPool.get(j) == guesses.get(1)) {
+                    tempPool.remove(j);
+                    j--;
+                }
+            }
+
+            //since the program only compares two different positions at once, this for loop helps to
+            //prevent asking same digits in same positions
+            for (int m = 0; m < numberPool.size(); m++) {
+                if (numberPool.get(m).charAt(0) == guesses.get(0).charAt(0) && numberPool.get(m).charAt(y) == guesses.get(0).charAt(y) ||
+                        numberPool.get(m).charAt(0) == guesses.get(0).charAt(y) && numberPool.get(m).charAt(y) == guesses.get(0).charAt(0)) {
+                    numberPool.remove(m);
+                    m--;
+                }
+            }
+            System.out.println("My Guess is "+guessedNumber);
+            getFeedback();
+            isConsistent2();
+
+            //checks if condition is true, if not go back and generate another guess
+            if (directHits.get(0) - directHits.get(1) == 2 || directHits.get(1) - directHits.get(0) == 2) {
+                condition = true;
+            }
+        }
+        numberPool.clear();
+        numberPool.addAll(tempPool);
+        for (int j = 0; j < numberPool.size(); j++) { //removes presented numbers
+            if (numberPool.get(j) == guesses.get(0) || numberPool.get(j) == guesses.get(1)) {
+                numberPool.remove(j);
+                j--;
+            }
+        }
+        tempPool.clear();
+
+        //once program obtains two digits in correct positions
+        // this part removes other not possible numbers from numberPool
+        if (directHits.get(0) - directHits.get(1) == 2) { //if first positioning is correct
+            removeRest(guesses.get(0).charAt(0), 1);
+            if (guesses.get(0).charAt(0) != guesses.get(0).charAt(5)) {
+                removeRest(guesses.get(0).charAt(5), 6);
+            } else if (guesses.get(0).charAt(0) != guesses.get(0).charAt(4)) {
+                removeRest(guesses.get(0).charAt(4), 5);
+            } else if (guesses.get(0).charAt(0) != guesses.get(0).charAt(3)) {
+                removeRest(guesses.get(0).charAt(3), 4);
+            } else if (guesses.get(0).charAt(0) != guesses.get(0).charAt(2)) {
+                removeRest(guesses.get(0).charAt(2), 3);
+            } else if (guesses.get(0).charAt(0) != guesses.get(0).charAt(1)) {
+                removeRest(guesses.get(0).charAt(1), 2);
+            }
+        }
+        if (directHits.get(1) - directHits.get(0) == 2) { //if second positioning is correct
+            if (guesses.get(0).charAt(0) != guesses.get(0).charAt(5)) {
+                removeRest(guesses.get(1).charAt(0), 6);
+                removeRest(guesses.get(1).charAt(5), 1);
+            } else if (guesses.get(0).charAt(0) != guesses.get(0).charAt(4)) {
+                removeRest(guesses.get(1).charAt(0), 5);
+                removeRest(guesses.get(1).charAt(4), 1);
+            } else if (guesses.get(0).charAt(0) != guesses.get(0).charAt(3)) {
+                removeRest(guesses.get(1).charAt(0), 4);
+                removeRest(guesses.get(1).charAt(3), 1);
+            } else if (guesses.get(0).charAt(0) != guesses.get(0).charAt(2)) {
+                removeRest(guesses.get(1).charAt(0), 3);
+                removeRest(guesses.get(1).charAt(2), 1);
+            } else if (guesses.get(0).charAt(0) != guesses.get(0).charAt(1)) {
+                removeRest(guesses.get(1).charAt(0), 2);
+                removeRest(guesses.get(1).charAt(1), 1);
+            }
+        }
+        condition = false;
+
+        if (!hasNumberFound(2)) { //checks if digit in 2nd position has found
+            tempPool.addAll(numberPool);
+            while (!condition) { //try to replace 2nd digit, same with first while loop
+                int y = 0;
+                directHits.clear();           //clean those arraylists since we do not need previous records anymore
+                closeHits.clear();
+                correctDigit.clear();
+                guesses.clear();
+                guessedNumber = "";
+
+                guessedNumber = numberGenerator();
+                System.out.println("My Guess is "+guessedNumber);
+                getFeedback();
+                isConsistent2();
+                if (guessedNumber.charAt(1) != guessedNumber.charAt(5) && !hasNumberFound(6)) {
+                    guessedNumber = "";
+                    guessedNumber = guessedNumber + guesses.get(0).charAt(0) + guesses.get(0).charAt(5) + guesses.get(0).charAt(2) +
+                            guesses.get(0).charAt(3) + guesses.get(0).charAt(4) + guesses.get(0).charAt(1);
+                    guesses.add(guessedNumber);
+                    y = 5;
+                } else {
+                    if (guessedNumber.charAt(1) != guessedNumber.charAt(4) && !hasNumberFound(5)) {
+                        guessedNumber = "";
+                        guessedNumber = guessedNumber + guesses.get(0).charAt(0) + guesses.get(0).charAt(4) + guesses.get(0).charAt(2) +
+                                guesses.get(0).charAt(3) + guesses.get(0).charAt(1) + guesses.get(0).charAt(5);
+                        guesses.add(guessedNumber);
+                        y = 4;
+                    } else {
+                        if (guessedNumber.charAt(1) != guessedNumber.charAt(3) && !hasNumberFound(4)) {
+                            guessedNumber = "";
+                            guessedNumber = guessedNumber + guesses.get(0).charAt(0) + guesses.get(0).charAt(3) + guesses.get(0).charAt(2) +
+                                    guesses.get(0).charAt(1) + guesses.get(0).charAt(4) + guesses.get(0).charAt(5);
+                            guesses.add(guessedNumber);
+                            y = 3;
+                        } else {
+                            if (guessedNumber.charAt(1) != guessedNumber.charAt(2) && !hasNumberFound(3)) {
+                                guessedNumber = "";
+                                guessedNumber = guessedNumber + guesses.get(0).charAt(0) + guesses.get(0).charAt(2) + guesses.get(0).charAt(1) +
+                                        guesses.get(0).charAt(3) + guesses.get(0).charAt(3) + guesses.get(0).charAt(5);
+                                guesses.add(guessedNumber);
+                                y = 2;
+                            } else {
+                                System.out.println("You are being inconsistent! Try again!");
+                                System.exit(0);
+                            }
+                        }
+                    }
+
+                }
+                for (int j = 0; j < numberPool.size(); j++) {
+                    if (numberPool.get(j) == guesses.get(0) || numberPool.get(j) == guesses.get(1)) {
+                        numberPool.remove(j);
+                        j--;
+                    }
+                }for (int j = 0; j < tempPool.size(); j++) {
+                    if (tempPool.get(j) == guesses.get(0) || tempPool.get(j) == guesses.get(1)) {
+                        tempPool.remove(j);
+                        j--;
+                    }
+                }
+                for (int m = 0; m < numberPool.size(); m++) {
+                    if (numberPool.get(m).charAt(1) == guesses.get(0).charAt(1) && numberPool.get(m).charAt(y) == guesses.get(0).charAt(y) ||
+                            numberPool.get(m).charAt(1) == guesses.get(0).charAt(y) && numberPool.get(m).charAt(y) == guesses.get(0).charAt(1)) {
+                        numberPool.remove(m);
+                        m--;
+                    }
+                }
+                System.out.println("My Guess is "+guessedNumber);
+                getFeedback();
+                isConsistent2();
+
+                if (directHits.get(0) - directHits.get(1) == 2 || directHits.get(1) - directHits.get(0) == 2) {
+                    condition = true;
+                }
+            }
+            numberPool.clear();
+            numberPool.addAll(tempPool);
+            tempPool.clear();
+            for (int j = 0; j < numberPool.size(); j++) {
+                if (numberPool.get(j) == guesses.get(0) || numberPool.get(j) == guesses.get(1)) {
+                    numberPool.remove(j);
+                    j--;
+                }
+            }
+            if (directHits.get(0) - directHits.get(1) == 2) {
+                removeRest(guesses.get(0).charAt(1), 2);
+                if (guesses.get(0).charAt(1) != guesses.get(0).charAt(5) && !hasNumberFound(6)) {
+                    removeRest(guesses.get(0).charAt(5), 6);
+                } else if (guesses.get(0).charAt(1) != guesses.get(0).charAt(4) && !hasNumberFound(5)) {
+                    removeRest(guesses.get(0).charAt(4), 5);
+                } else if (guesses.get(0).charAt(1) != guesses.get(0).charAt(3) && !hasNumberFound(4)) {
+                    removeRest(guesses.get(0).charAt(3), 4);
+                } else if (guesses.get(0).charAt(1) != guesses.get(0).charAt(2) && !hasNumberFound(3)) {
+                    removeRest(guesses.get(0).charAt(2), 3);
+                }
+            }
+            if (directHits.get(1) - directHits.get(0) == 2) {
+                if (guesses.get(1).charAt(1) != guesses.get(1).charAt(5) && !hasNumberFound(6)) {
+                    removeRest(guesses.get(1).charAt(1), 6);
+                    removeRest(guesses.get(1).charAt(5), 2);
+                } else if (guesses.get(1).charAt(1) != guesses.get(1).charAt(4) && !hasNumberFound(5)) {
+                    removeRest(guesses.get(1).charAt(1), 5);
+                    removeRest(guesses.get(1).charAt(4), 2);
+                } else if (guesses.get(1).charAt(1) != guesses.get(1).charAt(3) && !hasNumberFound(4)) {
+                    removeRest(guesses.get(1).charAt(1), 4);
+                    removeRest(guesses.get(1).charAt(3), 2);
+                } else if (guesses.get(1).charAt(1) != guesses.get(1).charAt(2) && !hasNumberFound(3)) {
+                    removeRest(guesses.get(1).charAt(1), 3);
+                    removeRest(guesses.get(1).charAt(2), 2);
+                }
+            }
+
+            condition = false;
+
+            directHits.clear();           //clean those arraylists since we do not need previous records anymore
+            closeHits.clear();
+            correctDigit.clear();
+            guesses.clear();
+            guessedNumber = "";
+
+            guessedNumber = numberGenerator();
+            System.out.println("My Guess is "+guessedNumber);
+            getFeedback();
+            isConsistent2();
+            for (int j = 0; j < numberPool.size(); j++) {
+                if (numberPool.get(j) == guessedNumber) {
+                    numberPool.remove(j);
+                    j--;
+                }
+            }
+            guessedNumber = numberGenerator();
+            System.out.println("My Guess is "+guessedNumber);
+            getFeedback();
+            isConsistent2();
+        }
+
+
+        if(!hasNumberFound(3)) {
+            while (!condition) { //replace 3nd digit
+                int y=0;
+                directHits.clear();           //clean those arraylists since we do not need previous records anymore
+                closeHits.clear();
+                correctDigit.clear();
+                guesses.clear();
+                guessedNumber = "";
+
+                guessedNumber = numberGenerator();
+                tempPool.addAll(numberPool);
+                System.out.println("My Guess is"+guessedNumber);
+                getFeedback();
+                isConsistent2();
+                if (guessedNumber.charAt(2) != guessedNumber.charAt(5) && !hasNumberFound(6)) {
+                    guessedNumber = "";
+                    guessedNumber = guessedNumber + guesses.get(0).charAt(0) + guesses.get(0).charAt(1) + guesses.get(0).charAt(5) +
+                            guesses.get(0).charAt(3) + guesses.get(0).charAt(4) + guesses.get(0).charAt(2);
+                    guesses.add(guessedNumber);
+                    y=5;
+                } else {
+                    if (guessedNumber.charAt(2) != guessedNumber.charAt(4) && !hasNumberFound(5)) {
+                        guessedNumber = "";
+                        guessedNumber = guessedNumber + guesses.get(0).charAt(0) + guesses.get(0).charAt(1) + guesses.get(0).charAt(4) +
+                                guesses.get(0).charAt(3) + guesses.get(0).charAt(2) + guesses.get(0).charAt(5);
+                        guesses.add(guessedNumber);
+                        y=4;
+                    } else {
+                        if (guessedNumber.charAt(2) != guessedNumber.charAt(3) && !hasNumberFound(4)) {
+                            guessedNumber = "";
+                            guessedNumber = guessedNumber + guesses.get(0).charAt(0) + guesses.get(0).charAt(1) + guesses.get(0).charAt(3) +
+                                    guesses.get(0).charAt(2) + guesses.get(0).charAt(4) + guesses.get(0).charAt(5);
+                            guesses.add(guessedNumber);
+                            y=3;
+                        } else {
+                            System.out.println("You are being inconsistent! Try again!");
+                            System.exit(0);
+                        }
+                    }
+                }
+                for (int j = 0; j < numberPool.size(); j++) {
+                    if (numberPool.get(j) == guesses.get(0) || numberPool.get(j) == guesses.get(1)) {
+                        numberPool.remove(j);
+                        j--;
+                    }
+                }for (int j = 0; j < tempPool.size(); j++) {
+                    if (tempPool.get(j) == guesses.get(0) || tempPool.get(j) == guesses.get(1)) {
+                        tempPool.remove(j);
+                        j--;
+                    }
+                }
+                for (int m = 0; m < numberPool.size(); m++) {
+                    if (numberPool.get(m).charAt(2) == guesses.get(0).charAt(2) && numberPool.get(m).charAt(y) == guesses.get(0).charAt(y) ||
+                            numberPool.get(m).charAt(2) == guesses.get(0).charAt(y) && numberPool.get(m).charAt(y) == guesses.get(0).charAt(2)) {
+                        numberPool.remove(m);
+                        m--;
+                    }
+                }
+                System.out.println("My Guess is"+guessedNumber);
+                getFeedback();
+                isConsistent2();
+
+                if (directHits.get(0) - directHits.get(1) == 2 || directHits.get(1) - directHits.get(0) == 2) {
+                    condition = true;
+                }
+
+            }
+            if (directHits.get(0) - directHits.get(1) == 2) {
+                removeRest(guesses.get(0).charAt(2), 3);
+                if (guesses.get(0).charAt(2) != guesses.get(0).charAt(5) && !hasNumberFound(6)) {
+                    removeRest(guesses.get(0).charAt(5), 6);
+                } else if (guesses.get(0).charAt(2) != guesses.get(0).charAt(4) && !hasNumberFound(5)) {
+                    removeRest(guesses.get(0).charAt(4), 5);
+                } else if (guesses.get(0).charAt(2) != guesses.get(0).charAt(3) && !hasNumberFound(4)) {
+                    removeRest(guesses.get(0).charAt(3), 4);
+                }
+            }
+            if (directHits.get(1) - directHits.get(0) == 2) {
+                removeRest(guesses.get(1).charAt(2), 3);
+                if (guesses.get(1).charAt(2) != guesses.get(1).charAt(5) && !hasNumberFound(6)) {
+                    removeRest(guesses.get(1).charAt(5), 6);
+                } else if (guesses.get(1).charAt(2) != guesses.get(1).charAt(4) && !hasNumberFound(5)) {
+                    removeRest(guesses.get(1).charAt(4), 5);
+                } else if (guesses.get(1).charAt(2) != guesses.get(1).charAt(3) && !hasNumberFound(4)) {
+                    removeRest(guesses.get(1).charAt(3), 4);
+                }
+            }
+        }
+        numberPool.clear();
+        numberPool.addAll(tempPool);
+        System.out.println("My Guess is"+guessedNumber);
+        getFeedback();
+        isConsistent2();
+        for (int j = 0; j < numberPool.size(); j++) {
+            if (numberPool.get(j) == guessedNumber) {
+                numberPool.remove(j);
+                j--;
+            }
+        }
+        System.out.println("My Guess is"+guessedNumber);
+        getFeedback();
+        isConsistent2();
+    }
+}
