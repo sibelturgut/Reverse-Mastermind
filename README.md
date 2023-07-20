@@ -1,7 +1,7 @@
 # Reverse-Mastermind
 Think of the classical Mastermind game, but with 6-digits and program is the Guesser
 
-  This is my first "big" project. I completed it at the date 26.12.2022 for my CS class project.
+  This is my first "big" project. So, it is a lengthy one :D I completed it at the date 26.12.2022 for my CS class project.
   
   Mastermind with 6-digits; codemaker provides a code with 6 digits -such as 123456- and the codebreaker tries to guess
 the code with the help of the feedbacks given from codemaker according to the guessed numbers. Feedbacks can only be given in
